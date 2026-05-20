@@ -1,0 +1,41 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Database (содержит данные пользователей — не коммитим)
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Скачанные статьи
+НайденныеСтатьи/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Окружения
+.env
+venv/
+.venv/
+
+# Сборка
+dist/
+build/
+output/
+*.spec
+_model_staging/
+_ollama_lib/
+ollama.exe
+
+# Claude Code (рабочие файлы ИИ-ассистента)
+.claude/
+MEMORY.md

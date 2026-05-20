@@ -1,0 +1,11 @@
+beautifulsoup4
+customtkinter
+docxtpl
+lxml
+numpy
+Pillow
+PyMuPDF
+python-docx
+requests
+win10toast-click
+pywin32
