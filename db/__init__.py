@@ -15,6 +15,8 @@ from .database import (
     delete_article,
     get_setting,
     save_setting,
+    get_user_setting,
+    save_user_setting,
     save_embedding,
     get_articles_with_embeddings,
     search_similar_articles,

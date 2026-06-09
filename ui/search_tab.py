@@ -16,7 +16,7 @@ from core.elibrary import ElibraryScaper
 from core.downloader import download_article, pdf_to_txt, save_as_txt
 from core.summarizer import Summarizer
 from core.translator import Translator
-from db import save_downloaded_article, save_search_history, get_search_history
+from db import save_downloaded_article, save_search_history, get_search_history, get_user_setting, save_user_setting
 from ui.document_viewer import open_document
 from ui.theme import (
     BG, BG_ALT, BG_DEEP, PAPER, TEXT, TEXT_MUTED, TEXT_GHOST,
@@ -53,6 +53,85 @@ _SITE_MIN_DELAY = {
 }
 
 
+class ELibAuthDialog(ctk.CTkToplevel):
+    """Диалог ввода учётных данных eLibrary.ru для конкретного пользователя."""
+
+    def __init__(self, parent, user_id: int, on_saved=None):
+        super().__init__(parent)
+        self._user_id  = user_id
+        self._on_saved = on_saved
+        self.title("Аутентификация eLibrary")
+        self.geometry("420x320")
+        self.minsize(380, 290)
+        self.resizable(True, True)
+        self.grab_set()
+        self.lift()
+        self.focus_force()
+        self.configure(fg_color=BG)
+        self._build()
+        self.bind("<Return>", lambda _: self._on_save())
+
+    def _build(self):
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_rowconfigure(1, weight=0)
+        self.grid_rowconfigure(2, weight=1)
+        self.grid_rowconfigure(3, weight=0)
+        self.grid_columnconfigure(0, weight=1)
+
+        btn_row = ctk.CTkFrame(self, fg_color="transparent")
+        btn_row.grid(row=3, column=0, sticky="ew", padx=24, pady=(8, 20))
+        secondary_btn(btn_row, "Отмена", command=self.destroy).pack(
+            side="left", expand=True, fill="x", padx=(0, 6))
+        primary_btn(btn_row, "Сохранить", command=self._on_save).pack(
+            side="left", expand=True, fill="x", padx=(6, 0))
+
+        center = ctk.CTkFrame(self, fg_color="transparent")
+        center.grid(row=1, column=0, sticky="ew", padx=24)
+
+        ctk.CTkLabel(center, text="eLibrary.ru",
+                     font=font(16, "bold"), text_color=TEXT).pack(pady=(0, 2))
+        ctk.CTkLabel(center, text="Бесплатный аккаунт на elibrary.ru",
+                     font=font(11), text_color=TEXT_GHOST).pack(pady=(0, 12))
+
+        card = card_frame(center)
+        card.pack(fill="x")
+
+        ctk.CTkLabel(card, text="ЛОГИН / EMAIL", font=font(10, "bold"),
+                     text_color=TEXT_GHOST, anchor="w").pack(
+                         anchor="w", padx=16, pady=(16, 3))
+        self._login_entry = styled_entry(card, "email или логин")
+        self._login_entry.pack(padx=16, fill="x")
+
+        ctk.CTkLabel(card, text="ПАРОЛЬ", font=font(10, "bold"),
+                     text_color=TEXT_GHOST, anchor="w").pack(
+                         anchor="w", padx=16, pady=(10, 3))
+        self._pass_entry = styled_entry(card, "пароль", show="•")
+        self._pass_entry.pack(padx=16, fill="x")
+
+        self._error_lbl = ctk.CTkLabel(card, text="",
+                                        text_color="#cc3333", font=font(11))
+        self._error_lbl.pack(pady=(6, 12))
+
+        existing_login = get_user_setting(self._user_id, "elibrary_login")
+        existing_pass  = get_user_setting(self._user_id, "elibrary_password")
+        if existing_login:
+            self._login_entry.insert(0, existing_login)
+        if existing_pass:
+            self._pass_entry.insert(0, existing_pass)
+
+    def _on_save(self):
+        login    = self._login_entry.get().strip()
+        password = self._pass_entry.get().strip()
+        if not login or not password:
+            self._error_lbl.configure(text="Заполните оба поля")
+            return
+        save_user_setting(self._user_id, "elibrary_login",    login)
+        save_user_setting(self._user_id, "elibrary_password", password)
+        if self._on_saved:
+            self._on_saved(login)
+        self.destroy()
+
+
 class SearchTab(ctk.CTkFrame):
     def __init__(self, parent, current_user: dict):
         super().__init__(parent, fg_color="transparent")
@@ -61,7 +140,7 @@ class SearchTab(ctk.CTkFrame):
         self._cy_scraper        = CyberLeninkaScraper()
         self._sibac_scraper     = SibacScraper()
         self._moluch_scraper    = MoluchScraper()
-        self._elibrary_scraper  = ElibraryScaper()
+        self._elibrary_scraper  = ElibraryScaper(user_id=current_user["id"])
         self._translator        = Translator()
         self._summarizer        = Summarizer()
         # catalog state
@@ -322,6 +401,11 @@ class SearchTab(ctk.CTkFrame):
 
         self._scout_site_vars: dict[str, ctk.BooleanVar] = {}
         for url, tag, enabled in _SCOUT_SITES:
+            is_elib = (url == "elibrary.ru")
+            if is_elib:
+                has_creds = bool(get_user_setting(self._current_user["id"], "elibrary_login"))
+                enabled = has_creds
+
             var = ctk.BooleanVar(value=enabled)
             self._scout_site_vars[url] = var
 
@@ -354,6 +438,24 @@ class SearchTab(ctk.CTkFrame):
             tag_f.pack(side="right")
             ctk.CTkLabel(tag_f, text=tag, font=font(9, "bold"),
                          text_color=ACCENT).pack(padx=5, pady=1)
+
+            if is_elib:
+                auth_row = ctk.CTkFrame(site_card, fg_color="transparent")
+                auth_row.pack(fill="x", padx=8, pady=(0, 7))
+
+                self._elib_status_lbl = ctk.CTkLabel(
+                    auth_row, text="", font=font(10), text_color=SUCCESS, anchor="w",
+                )
+                self._elib_status_lbl.pack(side="left", fill="x", expand=True)
+
+                secondary_btn(
+                    auth_row, "Войти в eLib",
+                    command=self._open_elib_auth, height=26,
+                ).pack(side="right")
+
+                if has_creds:
+                    login_hint = get_user_setting(self._current_user["id"], "elibrary_login")
+                    self._elib_status_lbl.configure(text=f"✓ {login_hint}")
 
 
         divider(sl, padx=12, pady=(14, 10))
@@ -507,6 +609,13 @@ class SearchTab(ctk.CTkFrame):
     # ──────────────────────────────────────────────────────────────────────────
     #  Mode (scout)
     # ──────────────────────────────────────────────────────────────────────────
+
+    def _open_elib_auth(self):
+        def on_saved(login: str):
+            self._elib_status_lbl.configure(text=f"✓ {login}", text_color=SUCCESS)
+            self._scout_site_vars["elibrary.ru"].set(True)
+            self._elibrary_scraper.reset_auth()
+        ELibAuthDialog(self, self._current_user["id"], on_saved=on_saved)
 
     def _update_delay_hint(self):
         mins = [

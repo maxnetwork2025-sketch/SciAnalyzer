@@ -412,6 +412,16 @@ def save_setting(key: str, value: str,
         )
 
 
+def get_user_setting(user_id: int, key: str, default: str = "",
+                     db_path: "str | Path | None" = None) -> str:
+    return get_setting(f"user_{user_id}_{key}", default, db_path)
+
+
+def save_user_setting(user_id: int, key: str, value: str,
+                      db_path: "str | Path | None" = None) -> None:
+    save_setting(f"user_{user_id}_{key}", value, db_path)
+
+
 # ─────────────────────────────────────────────
 #  Эмбеддинги
 # ─────────────────────────────────────────────

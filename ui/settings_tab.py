@@ -3,7 +3,7 @@ import subprocess
 
 import customtkinter as ctk
 from core.paths import DB_PATH, DATA_ROOT
-from db import reset_password, get_all_users, delete_user, create_user, get_setting, save_setting
+from db import reset_password, get_all_users, delete_user, create_user
 from ui.theme import (
     BG, BG_ALT, BG_DEEP, PAPER, TEXT, TEXT_MUTED, TEXT_GHOST,
     BORDER, BORDER_W, BORDER_SOFT, ACCENT, ACCENT_SOFT,
@@ -296,54 +296,24 @@ class SettingsTab(ctk.CTkFrame):
 
     def _build_api(self, parent) -> ctk.CTkFrame:
         frame = scrollable(parent)
-        self._section_header(frame, "Учётные данные", "Доступ к eLibrary.ru (РИНЦ)")
+        self._section_header(frame, "eLibrary", "Учётные данные")
 
-        eli_card = card_frame(frame)
-        eli_card.pack(fill="x", padx=20, pady=(0, 4))
+        card = card_frame(frame)
+        card.pack(fill="x", padx=20, pady=(0, 4))
 
-        ctk.CTkLabel(eli_card,
-                     text="Требуется бесплатный аккаунт на elibrary.ru",
-                     font=font(11), text_color=TEXT_GHOST, anchor="w").pack(
-                         anchor="w", padx=16, pady=(12, 6))
-
-        row_login = ctk.CTkFrame(eli_card, fg_color="transparent")
-        row_login.pack(fill="x", padx=16, pady=(0, 6))
-        ctk.CTkLabel(row_login, text="Логин", font=font(12),
-                     text_color=TEXT_MUTED, width=110, anchor="w").pack(side="left")
-        self._eli_login = styled_entry(row_login, "email или логин", height=36)
-        self._eli_login.pack(side="left", fill="x", expand=True)
-        self._eli_login.insert(0, get_setting("elibrary_login"))
-
-        row_pass = ctk.CTkFrame(eli_card, fg_color="transparent")
-        row_pass.pack(fill="x", padx=16, pady=(0, 12))
-        ctk.CTkLabel(row_pass, text="Пароль", font=font(12),
-                     text_color=TEXT_MUTED, width=110, anchor="w").pack(side="left")
-        self._eli_pass = styled_entry(row_pass, "пароль", show="•", height=36)
-        self._eli_pass.pack(side="left", fill="x", expand=True)
-        self._eli_pass.insert(0, get_setting("elibrary_password"))
-
-        self._eli_status = ctk.CTkLabel(eli_card, text="", font=font(11),
-                                         text_color=TEXT_GHOST, anchor="w")
-        self._eli_status.pack(anchor="w", padx=16, pady=(0, 4))
-
-        primary_btn(eli_card, "Сохранить учётные данные",
-                    command=self._save_elibrary_creds, height=36).pack(
-                        padx=16, pady=(0, 14), anchor="w")
+        ctk.CTkLabel(card,
+                     text="Аутентификация eLibrary перенесена в раздел Разведка.",
+                     font=font(13), text_color=TEXT_MUTED, anchor="w",
+                     wraplength=480, justify="left").pack(
+                         anchor="w", padx=16, pady=(16, 4))
+        ctk.CTkLabel(card,
+                     text="Откройте вкладку Поиск → Разведка и нажмите «Войти в eLib»\n"
+                          "в карточке elibrary.ru на левой панели.",
+                     font=font(11), text_color=TEXT_GHOST, anchor="w",
+                     wraplength=480, justify="left").pack(
+                         anchor="w", padx=16, pady=(0, 16))
 
         return frame
-
-    def _save_elibrary_creds(self):
-        login    = self._eli_login.get().strip()
-        password = self._eli_pass.get().strip()
-        if not login or not password:
-            self._eli_status.configure(text="Заполните оба поля", text_color="#cc3333")
-            return
-        save_setting("elibrary_login",    login)
-        save_setting("elibrary_password", password)
-        self._eli_status.configure(
-            text="Сохранено. Авторизация произойдёт при следующем поиске.",
-            text_color=TEXT_GHOST,
-        )
 
     def _build_database(self, parent) -> ctk.CTkFrame:
         frame = scrollable(parent)
