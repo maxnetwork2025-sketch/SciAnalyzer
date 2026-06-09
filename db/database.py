@@ -132,6 +132,21 @@ CREATE TABLE IF NOT EXISTS document_records (
 
 CREATE INDEX IF NOT EXISTS idx_doc_records_user ON document_records(user_id);
 CREATE INDEX IF NOT EXISTS idx_doc_records_tpl  ON document_records(template_name);
+
+-- ─────────────────────────────────────────────
+--  Списки значений для полей документов
+-- ─────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS doc_field_lists (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    list_name   TEXT    NOT NULL,
+    item_value  TEXT    NOT NULL,
+    user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    sort_order  INTEGER NOT NULL DEFAULT 0,
+    UNIQUE(list_name, item_value, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_doc_field_lists_user ON doc_field_lists(user_id);
+CREATE INDEX IF NOT EXISTS idx_doc_field_lists_name ON doc_field_lists(user_id, list_name);
 """
 
 
@@ -178,6 +193,18 @@ def init_db(db_path: str | Path | None = None) -> None:
                 "output_path TEXT, "
                 "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
                 "user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE)"
+            )
+        except Exception:
+            pass
+        try:
+            conn.execute(
+                "CREATE TABLE IF NOT EXISTS doc_field_lists ("
+                "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                "list_name TEXT NOT NULL, "
+                "item_value TEXT NOT NULL, "
+                "user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, "
+                "sort_order INTEGER NOT NULL DEFAULT 0, "
+                "UNIQUE(list_name, item_value, user_id))"
             )
         except Exception:
             pass
@@ -536,3 +563,85 @@ def delete_document_record(
 ) -> None:
     with get_connection(db_path) as conn:
         conn.execute("DELETE FROM document_records WHERE id = ?", (record_id,))
+
+
+# ─────────────────────────────────────────────
+#  Списки значений для полей документов
+# ─────────────────────────────────────────────
+
+def get_doc_list_names(
+    user_id: int,
+    db_path: "str | Path | None" = None,
+) -> list:
+    with get_connection(db_path) as conn:
+        rows = conn.execute(
+            "SELECT DISTINCT list_name FROM doc_field_lists WHERE user_id = ? ORDER BY list_name",
+            (user_id,),
+        ).fetchall()
+    return [r["list_name"] for r in rows]
+
+
+def get_doc_list_items(
+    list_name: str,
+    user_id:   int,
+    db_path:   "str | Path | None" = None,
+) -> list:
+    with get_connection(db_path) as conn:
+        rows = conn.execute(
+            "SELECT item_value FROM doc_field_lists"
+            " WHERE list_name = ? AND user_id = ? ORDER BY sort_order, item_value",
+            (list_name, user_id),
+        ).fetchall()
+    return [r["item_value"] for r in rows]
+
+
+def add_doc_list_item(
+    list_name:  str,
+    item_value: str,
+    user_id:    int,
+    db_path:    "str | Path | None" = None,
+) -> None:
+    with get_connection(db_path) as conn:
+        conn.execute(
+            "INSERT OR IGNORE INTO doc_field_lists (list_name, item_value, user_id)"
+            " VALUES (?, ?, ?)",
+            (list_name, item_value, user_id),
+        )
+
+
+def delete_doc_list_item(
+    list_name:  str,
+    item_value: str,
+    user_id:    int,
+    db_path:    "str | Path | None" = None,
+) -> None:
+    with get_connection(db_path) as conn:
+        conn.execute(
+            "DELETE FROM doc_field_lists WHERE list_name = ? AND item_value = ? AND user_id = ?",
+            (list_name, item_value, user_id),
+        )
+
+
+def delete_doc_list(
+    list_name: str,
+    user_id:   int,
+    db_path:   "str | Path | None" = None,
+) -> None:
+    with get_connection(db_path) as conn:
+        conn.execute(
+            "DELETE FROM doc_field_lists WHERE list_name = ? AND user_id = ?",
+            (list_name, user_id),
+        )
+
+
+def rename_doc_list(
+    old_name: str,
+    new_name: str,
+    user_id:  int,
+    db_path:  "str | Path | None" = None,
+) -> None:
+    with get_connection(db_path) as conn:
+        conn.execute(
+            "UPDATE doc_field_lists SET list_name = ? WHERE list_name = ? AND user_id = ?",
+            (new_name, old_name, user_id),
+        )
