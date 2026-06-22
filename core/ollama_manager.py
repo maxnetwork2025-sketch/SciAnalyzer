@@ -1,8 +1,8 @@
 """
-Управление фоновым процессом Ollama.
+Запуск и мониторинг Ollama в фоне.
 
-При запуске приложения вызови ensure_running() — она запустит `ollama serve`
-используя bundled ollama.exe и указывая на модели в %APPDATA%/SciAnalyzer/models.
+При старте приложения вызываем ensure_running() — она найдёт ollama.exe
+(рядом с нашим exe или в системе) и поднимет сервер если он ещё не запущен.
 """
 from __future__ import annotations
 
@@ -23,25 +23,25 @@ _launched     = False
 
 
 def _models_dir() -> Path:
-    """Where we store Ollama model files (inside our APPDATA folder)."""
+    """Где хранятся файлы моделей — кладём в папку приложения, а не дефолтную C:/Users/..."""
     from core.paths import DATA_ROOT
     return DATA_ROOT / "models"
 
 
 def _find_exe() -> str | None:
-    """Locate ollama.exe: bundled next to our app first, then system fallbacks."""
-    # Bundled alongside our frozen executable
+    """Ищем ollama.exe: сначала рядом с нашим exe, потом в системных путях."""
+    # В собранном приложении — рядом с нашим exe
     if getattr(sys, "frozen", False):
         candidate = Path(sys.executable).parent / "ollama.exe"
         if candidate.exists():
             return str(candidate)
     else:
-        # Dev mode: project root
+        # В режиме разработки — корень проекта
         candidate = Path(__file__).parent.parent / "ollama.exe"
         if candidate.exists():
             return str(candidate)
 
-    # System-wide installation fallbacks
+    # Пробуем системную установку
     exe = shutil.which("ollama")
     if exe:
         return exe
@@ -61,7 +61,7 @@ def is_running() -> bool:
 
 
 def ensure_running() -> None:
-    """Start Ollama in background if not already running. Non-blocking."""
+    """Запускает Ollama в фоновом потоке если она ещё не запущена. Не блокирует."""
     threading.Thread(target=_ensure_worker, daemon=True).start()
 
 

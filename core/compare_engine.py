@@ -36,7 +36,7 @@ _STOPWORDS = {
     'are', 'what', 'when', 'where', 'how', 'while', 'then',
 }
 
-# Truncate input to ~6 000 chars to stay well within Ollama limits
+# режем текст — Ollama начинает глючить на очень длинных запросах
 _MAX_EMBED_CHARS = 6_000
 
 

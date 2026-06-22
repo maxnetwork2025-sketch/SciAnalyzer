@@ -1,4 +1,4 @@
-"""Centralized path resolution: works both in dev mode and as a frozen PyInstaller bundle."""
+"""Все пути приложения в одном месте — работает и при разработке, и в собранном exe."""
 from __future__ import annotations
 
 import os
@@ -16,7 +16,7 @@ def _data_root() -> Path:
 
 
 def bundled(relative: str) -> Path:
-    """Path to a read-only resource bundled by PyInstaller (icon, etc.)."""
+    """Путь к ресурсу внутри PyInstaller-бандла (иконки и т.д.)."""
     if getattr(sys, "frozen", False):
         return Path(sys._MEIPASS) / relative  # type: ignore[attr-defined]
     return Path(__file__).parent.parent / relative

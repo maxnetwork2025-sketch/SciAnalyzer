@@ -156,7 +156,7 @@ class ElibraryScaper:
 
     def _fetch_page(self, query: str, page: int, mode: str) -> list[Article]:
         try:
-            # Шаг 1: GET форму — захватываем все поля включая hidden
+            # сначала загружаем форму поиска — там скрытые поля, без них POST не пройдёт
             self._session.headers["Referer"] = BASE_URL + "/defaultx.asp"
             r_form = self._session.get(_QUERYBOX_URL, timeout=60)
 
@@ -168,7 +168,7 @@ class ElibraryScaper:
             soup_form = BeautifulSoup(r_form.text, "html.parser")
             form = soup_form.find("form", action=re.compile(r"querybox", re.I))
 
-            # Собираем все поля формы с дефолтными значениями
+            # собираем все поля как есть, чтобы POST выглядел как нормальный браузер
             data: dict = {}
             if form:
                 for inp in form.find_all(["input", "textarea", "select"]):
@@ -176,7 +176,7 @@ class ElibraryScaper:
                     if name:
                         data[name] = inp.get("value", "")
 
-            # Перекрываем своими параметрами
+            # теперь подставляем наши параметры поиска
             if mode == "author":
                 data.update({
                     "ftext":        "",
@@ -201,7 +201,7 @@ class ElibraryScaper:
                     "start_page":     str(page + 1),
                 })
 
-            # Шаг 2: POST поиска
+            # отправляем поиск
             self._session.headers["Referer"] = _QUERYBOX_URL
             time.sleep(1)
             r = self._session.post(_QUERYBOX_URL, data=data, timeout=60)

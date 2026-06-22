@@ -92,7 +92,7 @@ class SciAPIClient:
         parts = query.strip().split()
         if len(parts) == 1:
             return self._arxiv_query(f"au:{parts[0]}", n)
-        # Try original order, then reversed (arXiv stores "Last, First")
+        # arXiv хранит авторов в формате "Фамилия, Имя" — пробуем оба порядка
         orig = "_".join(parts)
         rev  = "_".join(parts[-1:] + parts[:-1])
         results = self._arxiv_query(f"au:{orig}", n)
@@ -145,7 +145,7 @@ class SciAPIClient:
         return self._pubmed_query(f"{query}[Author]", n)
 
     def _pubmed_query(self, term: str, n: int) -> list[Article]:
-        # Шаг 1: получаем список PMID
+        # Сначала получаем список ID статей — отдельным запросом, это требование API
         r1 = _SESSION.get(
             "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi",
             params={"db": "pubmed", "term": term, "retmax": n, "retmode": "json"},
@@ -156,9 +156,9 @@ class SciAPIClient:
         if not ids:
             return []
 
-        time.sleep(0.35)  # лимит NCBI: 3 запроса/сек
+        time.sleep(0.35)  # NCBI банит если дёргать чаще 3 раз в секунду
 
-        # Шаг 2: получаем детали
+        # Теперь получаем полные данные по найденным ID
         r2 = _SESSION.get(
             "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi",
             params={"db": "pubmed", "id": ",".join(ids), "retmode": "xml"},
@@ -200,7 +200,7 @@ class SciAPIClient:
     # ── Semantic Scholar ────────────────────────────────────────────────────
 
     def _ss_topic(self, query: str, n: int) -> list[Article]:
-        time.sleep(1.1)  # SS rate-limit: 1 req/sec без API ключа
+        time.sleep(1.1)  # без API-ключа Semantic Scholar режет до 1 запроса/сек
         resp = _SESSION.get(
             "https://api.semanticscholar.org/graph/v1/paper/search",
             params={
@@ -215,7 +215,7 @@ class SciAPIClient:
 
     def _ss_author(self, query: str, n: int) -> list[Article]:
         time.sleep(1.1)
-        # Шаг 1: найти автора
+        # Сначала ищем автора по имени, чтобы получить его ID
         r1 = _SESSION.get(
             "https://api.semanticscholar.org/graph/v1/author/search",
             params={"query": query, "fields": "name", "limit": 3},
@@ -230,9 +230,9 @@ class SciAPIClient:
         if not author_id:
             return []
 
-        time.sleep(1.0)  # лимит SS: 1 запрос/сек без ключа
+        time.sleep(1.0)  # опять ждём — лимит тот же
 
-        # Шаг 2: статьи автора
+        # Теперь по ID запрашиваем список его статей
         r2 = _SESSION.get(
             f"https://api.semanticscholar.org/graph/v1/author/{author_id}/papers",
             params={

@@ -83,7 +83,7 @@ class MoluchScraper:
     # ── Internal helpers ─────────────────────────────────────────────────────
 
     def _get_recent_issues(self, n: int) -> list[str]:
-        """Return up to n unique /archive/NNN/ paths, most recent first."""
+        """Возвращает до n путей /archive/NNN/, самые свежие первыми."""
         try:
             r = _SESSION.get(_ARCHIVE_URL, timeout=20)
             r.raise_for_status()
@@ -108,7 +108,7 @@ class MoluchScraper:
         query_lc:   str,
         mode:       str,
     ) -> list[tuple[str, str]]:
-        """Return (title, full_url) pairs from issue page matching query."""
+        """Возвращает пары (заголовок, url) для статей из выпуска, совпадающих с запросом."""
         try:
             r = _SESSION.get(BASE_URL + issue_path, timeout=20)
             r.raise_for_status()
@@ -133,7 +133,7 @@ class MoluchScraper:
 
             needle = title.lower()
             if mode == "author":
-                # Author search: keyword appears in text around the link
+                # при поиске по автору смотрим не только заголовок, но и текст вокруг ссылки
                 parent_text = ""
                 p = a.find_parent()
                 if p:
@@ -149,12 +149,12 @@ class MoluchScraper:
         return matches
 
     def _fetch_article(self, url: str, fallback_title: str) -> Article | None:
-        """Load article page to get authors, abstract, year."""
+        """Загружает страницу статьи чтобы получить авторов, аннотацию и год."""
         try:
             r = _SESSION.get(url, timeout=20)
             r.raise_for_status()
         except Exception:
-            # Return minimal article using data already known from issue listing
+            # страница не загрузилась — возвращаем то, что успели собрать из выпуска
             return Article(
                 title=fallback_title,
                 authors=[],
@@ -166,22 +166,21 @@ class MoluchScraper:
 
         soup = BeautifulSoup(r.content, "html.parser")
 
-        # Title from h1 (more complete than link text in issue listing)
+        # заголовок из h1 полнее, чем текст ссылки со страницы выпуска
         h1 = soup.find("h1")
         title = h1.get_text(strip=True) if h1 else fallback_title
 
-        # Authors
         authors = [
             tag.get_text(strip=True)
             for tag in soup.select("[itemprop=author]")
             if tag.get_text(strip=True)
         ]
 
-        # Abstract from meta description
+        # аннотацию берём из meta description — moluch её там хранит
         meta = soup.find("meta", {"name": "description"})
         abstract = meta.get("content", "").strip() if meta else ""
 
-        # Year from article:published_time meta
+        # год из мета-тега article:published_time
         year = ""
         pub_time = soup.find("meta", {"property": "article:published_time"})
         if pub_time:

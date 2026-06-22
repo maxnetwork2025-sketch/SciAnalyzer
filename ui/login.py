@@ -102,6 +102,3 @@ class LoginWindow(ctk.CTk):
             self.pass_entry.delete(0, "end")
             self.pass_entry.focus()
 
-    def _on_register(self):
-        self.error_label.configure(
-            text="Регистрация будет доступна позже", text_color="#4a5a90")

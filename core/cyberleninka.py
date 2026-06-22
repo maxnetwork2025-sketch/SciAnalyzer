@@ -98,26 +98,22 @@ class CyberLeninkaScraper:
         return self._fetch_html(query, page=offset // max(size, 1))
 
     def _parse_api(self, item: dict) -> Article:
-        # title — may contain <b> highlight tags
+        # в названии и аннотации могут быть <b>-теги от подсветки — убираем
         title = _strip_tags(item.get("name") or "")
-
-        # abstract — may contain <b> highlight tags
         abstract = _strip_tags(item.get("annotation") or "")
 
         year = str(item.get("year") or "")
 
-        # URL: field "link" is a relative path like /article/n/slug
+        # ссылка — относительный путь вида /article/n/slug
         link = item.get("link") or ""
         url  = f"{BASE_URL}{link}" if link.startswith("/") else link
 
-        # authors: list of plain strings
         raw_authors = item.get("authors") or []
         if isinstance(raw_authors, list):
             authors = [str(a).strip() for a in raw_authors if a]
         else:
             authors = [str(raw_authors).strip()]
 
-        # journal: plain string
         journal = str(item.get("journal") or "").strip()
 
         return Article(

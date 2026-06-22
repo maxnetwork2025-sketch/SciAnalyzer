@@ -94,14 +94,14 @@ class ArticleScraper:
         r.raise_for_status()
         soup = BeautifulSoup(r.content, "html.parser")
 
-        # Title
+        # пробуем взять заголовок
         title = ""
         if (h1 := soup.find("h1")):
             title = h1.get_text(strip=True)
         elif soup.title and soup.title.string:
             title = soup.title.string.strip()
 
-        # Content: prefer <article>, then all <p>
+        # предпочитаем <article> если есть, иначе собираем все <p>
         content_parts: list[str] = []
         article_tag = soup.find("article")
         if article_tag:

@@ -522,16 +522,6 @@ class SearchTab(ctk.CTkFrame):
         ctk.CTkLabel(hdr_left, text="Куда отправимся?",
                      font=font(22, "bold"), text_color=TEXT).pack(anchor="w")
 
-        # status_f = ctk.CTkFrame(hdr, fg_color=BG_ALT, corner_radius=4,
-        #                         border_width=1, border_color=BORDER_SOFT)
-        # status_f.pack(side="right", pady=12)
-        # srow = ctk.CTkFrame(status_f, fg_color="transparent")
-        # srow.pack(padx=10, pady=6)
-        # ctk.CTkFrame(srow, width=8, height=8,
-        #              corner_radius=4, fg_color="#4a8c6a").pack(side="left", padx=(0, 6))
-        # ctk.CTkLabel(srow, text="скрапер готов · 2 сайта",
-        #              font=font(11), text_color=TEXT_MUTED).pack(side="left")
-
         # Mode chips
         mrow = ctk.CTkFrame(top_bar, fg_color="transparent")
         mrow.pack(fill="x", padx=24, pady=(14, 10))

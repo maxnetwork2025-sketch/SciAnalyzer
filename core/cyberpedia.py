@@ -91,7 +91,7 @@ class CyberpediaScraper:
             if not title:
                 continue
 
-            # Walk up to containing block to find snippet text
+            # идём вверх по DOM чтобы найти блок со сниппетом вокруг ссылки
             block = a
             for _ in range(5):
                 parent = block.find_parent(["div", "li", "article", "p"])
@@ -104,7 +104,7 @@ class CyberpediaScraper:
                 block = parent
 
             snippet = block.get_text(" ", strip=True)
-            # Strip leading numbering (e.g. "1. ") and the title itself
+            # убираем нумерацию ("1. ") и дублирующийся заголовок
             snippet = re.sub(r"^\d+\.\s*", "", snippet)
             snippet = snippet.replace(title, "").strip()
 
