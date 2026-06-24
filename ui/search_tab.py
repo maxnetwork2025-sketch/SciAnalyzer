@@ -555,13 +555,14 @@ class SearchTab(ctk.CTkFrame):
         )
         self._scout_search_btn.pack(side="left")
 
-        # Estimate line
-        depth_val = 3
-        ctk.CTkLabel(
-            top_bar,
-            text=f"Будет обойдено ~ {depth_val} страницы  ·  ожидаемое время ~ 30 сек",
+        # Estimate line — обновляется при смене глубины / сайтов / задержки
+        self._scout_estimate_lbl = ctk.CTkLabel(
+            top_bar, text="",
             font=font(11), text_color=TEXT_GHOST, anchor="w",
-        ).pack(fill="x", padx=24, pady=(0, 4))
+        )
+        self._scout_estimate_lbl.pack(fill="x", padx=24, pady=(0, 4))
+        self._scout_depth_var.trace_add("write", self._update_estimate)
+        self._update_estimate()
 
 
         divider(right, padx=24, pady=(0, 0))
@@ -630,6 +631,22 @@ class SearchTab(ctk.CTkFrame):
         self._scout_delay_lbl.configure(
             text=f"сек  ·  {icon} рекомендуется ≥{rec:.0f} сек",
             text_color=color,
+        )
+        self._update_estimate()
+
+    def _update_estimate(self, *_):
+        if not hasattr(self, "_scout_estimate_lbl"):
+            return
+        depth   = self._scout_depth_var.get()
+        n_sites = sum(1 for var in self._scout_site_vars.values() if var.get())
+        try:
+            delay = float(self._scout_delay_entry.get().strip() or "2")
+        except ValueError:
+            delay = 2.0
+        pages_total = depth * max(n_sites, 1)
+        time_est    = max(10, int(pages_total * (delay + 3)))
+        self._scout_estimate_lbl.configure(
+            text=f"Будет обойдено ~ {pages_total} страниц  ·  ожидаемое время ~ {time_est} сек"
         )
 
     def _set_scout_mode(self, key: str):

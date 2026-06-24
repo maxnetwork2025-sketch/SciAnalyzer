@@ -36,6 +36,11 @@ _model_staging/
 _ollama_lib/
 ollama.exe
 
+# Тесты
+tests/
+pytest.ini
+.pytest_cache/
+
 # Claude Code (рабочие файлы ИИ-ассистента)
 .claude/
 MEMORY.md
