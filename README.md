@@ -115,7 +115,7 @@ curl-cffi           # TLS-имитация Chrome (для eLibrary.ru)
 ## Структура проекта
 
 ```
-Newanalayzer/
+SCIAnalayzer/
 ├── main.py                  # Точка входа
 ├── requirements.txt
 │
