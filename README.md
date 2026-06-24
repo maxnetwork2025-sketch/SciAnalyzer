@@ -55,8 +55,8 @@
 ### 1. Клонировать репозиторий
 
 ```bash
-git clone https://github.com/maxnetwork2025-sketch/Newanalayzer.git
-cd Newanalayzer
+git clone https://github.com/maxnetwork2025-sketch/SciAnalyzer.git
+cd SciAnalyzer
 ```
 
 ### 2. Создать виртуальное окружение
@@ -115,7 +115,7 @@ curl-cffi           # TLS-имитация Chrome (для eLibrary.ru)
 ## Структура проекта
 
 ```
-Newanalayzer/
+SciAnalyzer/
 ├── main.py                  # Точка входа
 ├── requirements.txt
 │

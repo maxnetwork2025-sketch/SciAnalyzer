@@ -21,10 +21,6 @@ class Summarizer:
         self.url         = (url or self.DEFAULT_URL).rstrip("/")
         self.temperature = temperature
 
-    # ──────────────────────────────────────────
-    #  Публичный метод
-    # ──────────────────────────────────────────
-
     def summarize(self, text: str) -> str:
         chunks = self._split(text)
         summaries = [self._summarize_chunk(i, c, len(chunks))
@@ -39,10 +35,6 @@ class Summarizer:
             return r.status_code == 200
         except Exception:
             return False
-
-    # ──────────────────────────────────────────
-    #  Внутренние методы
-    # ──────────────────────────────────────────
 
     def _split(self, text: str) -> list[str]:
         """Разбивает по абзацам, не разрезая слова посередине."""
